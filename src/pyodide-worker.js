@@ -27,7 +27,9 @@ function updateStatus(statusElement, message) {
  */
 async function loadFonts(pyodideInstance, statusElement) {
   for (const font of FONTS) {
-    const fontPath = `./fonts/${font.value}`;
+    // Construct path relative to the document location
+    const baseUrl = new URL('.', window.location.href);
+    const fontPath = new URL(`fonts/${font.value}`, baseUrl).href;
     updateStatus(statusElement, `Mounting ${font.label}...`);
 
     try {
