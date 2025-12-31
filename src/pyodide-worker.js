@@ -27,9 +27,8 @@ function updateStatus(statusElement, message) {
  */
 async function loadFonts(pyodideInstance, statusElement) {
   for (const font of FONTS) {
-    // Construct path relative to the document location
-    const baseUrl = new URL('.', window.location.href);
-    const fontPath = new URL(`fonts/${font.value}`, baseUrl).href;
+    // Use import.meta.url to get correct path in both dev and production
+    const fontPath = new URL(`../public/fonts/${font.value}`, import.meta.url).href;
     updateStatus(statusElement, `Mounting ${font.label}...`);
 
     try {
