@@ -7,6 +7,22 @@
 
 import { PYODIDE_CONFIG, FONTS } from './constants.js';
 
+// Import fonts as Vite assets
+import allertaFont from '../public/fonts/AllertaStencil-Regular.ttf?url';
+import sirinFont from '../public/fonts/SirinStencil-Regular.ttf?url';
+import bigShouldersFont from '../public/fonts/BigShouldersStencil-Regular.ttf?url';
+import emblemaFont from '../public/fonts/EmblemaOne-Regular.ttf?url';
+import stardosFont from '../public/fonts/StardosStencil-Regular.ttf?url';
+
+// Map font filenames to their imported URLs
+const FONT_URLS = {
+  'AllertaStencil-Regular.ttf': allertaFont,
+  'SirinStencil-Regular.ttf': sirinFont,
+  'BigShouldersStencil-Regular.ttf': bigShouldersFont,
+  'EmblemaOne-Regular.ttf': emblemaFont,
+  'StardosStencil-Regular.ttf': stardosFont,
+};
+
 let pyodide = null;
 
 /**
@@ -27,8 +43,8 @@ function updateStatus(statusElement, message) {
  */
 async function loadFonts(pyodideInstance, statusElement) {
   for (const font of FONTS) {
-    // Use import.meta.url to get correct path in both dev and production
-    const fontPath = new URL(`../public/fonts/${font.value}`, import.meta.url).href;
+    // Get the Vite-resolved URL for this font
+    const fontPath = FONT_URLS[font.value];
     updateStatus(statusElement, `Mounting ${font.label}...`);
 
     try {
