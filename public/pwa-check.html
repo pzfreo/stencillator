@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PWA Installation Check</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+    h1 { color: #00f2fe; }
+    .check {
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 8px;
+      background: #1e293b;
+    }
+    .pass { border-left: 4px solid #10b981; }
+    .fail { border-left: 4px solid #ef4444; }
+    .pending { border-left: 4px solid #f59e0b; }
+    button {
+      background: #00f2fe;
+      color: #0f172a;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      margin: 10px 5px;
+    }
+    button:hover { opacity: 0.9; }
+    pre {
+      background: #0f172a;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>PWA Installation Diagnostic</h1>
+  <div id="results"></div>
+  <div id="install-section" style="display: none;">
+    <h2>Manual Install</h2>
+    <button id="install-btn">Install App</button>
+  </div>
+  <div>
+    <h2>Actions</h2>
+    <button onclick="location.reload()">Refresh Check</button>
+    <button onclick="location.href='./'">Back to App</button>
+  </div>
+
+  <script>
+    const results = document.getElementById('results');
+    const installSection = document.getElementById('install-section');
+    const installBtn = document.getElementById('install-btn');
+    let deferredPrompt = null;
+
+    function addCheck(title, pass, message) {
+      const div = document.createElement('div');
+      div.className = `check ${pass ? 'pass' : 'fail'}`;
+      div.innerHTML = `<strong>${pass ? '✓' : '✗'} ${title}</strong><br>${message}`;
+      results.appendChild(div);
+    }
+
+    function addPending(title, message) {
+      const div = document.createElement('div');
+      div.className = 'check pending';
+      div.innerHTML = `<strong>⏳ ${title}</strong><br>${message}`;
+      results.appendChild(div);
+    }
+
+    async function checkPWA() {
+      // Check HTTPS
+      const isHttps = window.location.protocol === 'https:';
+      addCheck('HTTPS', isHttps, isHttps ? 'Site is served over HTTPS' : 'Site must be served over HTTPS');
+
+      // Check Service Worker
+      if ('serviceWorker' in navigator) {
+        try {
+          const registration = await navigator.serviceWorker.getRegistration();
+          addCheck('Service Worker', !!registration, registration ?
+            `Service Worker registered: ${registration.active ? 'Active' : 'Installing'}` :
+            'No Service Worker found');
+
+          if (registration) {
+            const sw = registration.active || registration.installing || registration.waiting;
+            if (sw) {
+              const div = document.createElement('div');
+              div.className = 'check pass';
+              div.innerHTML = `<strong>Service Worker Details</strong><br><pre>URL: ${sw.scriptURL}\nState: ${sw.state}</pre>`;
+              results.appendChild(div);
+            }
+          }
+        } catch (err) {
+          addCheck('Service Worker', false, `Error checking: ${err.message}`);
+        }
+      } else {
+        addCheck('Service Worker', false, 'Service Worker not supported in this browser');
+      }
+
+      // Check Manifest
+      try {
+        const manifestLink = document.querySelector('link[rel="manifest"]');
+        if (manifestLink) {
+          const manifestUrl = new URL(manifestLink.href, window.location.href);
+          const response = await fetch(manifestUrl);
+          const manifest = await response.json();
+
+          addCheck('Manifest', true, `Found manifest at: ${manifestLink.href}`);
+
+          const has192 = manifest.icons?.some(i => i.sizes.includes('192'));
+          const has512 = manifest.icons?.some(i => i.sizes.includes('512'));
+
+          addCheck('Required Icons (192x192)', has192, has192 ? 'Found 192x192 icon' : 'Missing 192x192 icon');
+          addCheck('Required Icons (512x512)', has512, has512 ? 'Found 512x512 icon' : 'Missing 512x512 icon');
+
+          const div = document.createElement('div');
+          div.className = 'check pass';
+          div.innerHTML = `<strong>Manifest Details</strong><br><pre>${JSON.stringify(manifest, null, 2)}</pre>`;
+          results.appendChild(div);
+        } else {
+          addCheck('Manifest', false, 'No manifest link found in HTML');
+        }
+      } catch (err) {
+        addCheck('Manifest', false, `Error loading manifest: ${err.message}`);
+      }
+
+      // Check if already installed
+      if (window.matchMedia('(display-mode: standalone)').matches) {
+        addPending('Installation Status', 'App is already installed! (Running in standalone mode)');
+      } else {
+        addPending('Installation Status', 'App is not installed (running in browser)');
+      }
+
+      // Browser-specific notes
+      const userAgent = navigator.userAgent.toLowerCase();
+      let browserNote = '';
+      if (userAgent.includes('chrome') && !userAgent.includes('edg')) {
+        browserNote = 'Chrome: Install button appears in address bar after user engagement. Try interacting with the site, then refresh.';
+      } else if (userAgent.includes('edg')) {
+        browserNote = 'Edge: Install button appears in address bar. Look for the app icon or "..." menu → "Apps" → "Install".';
+      } else if (userAgent.includes('safari') && !userAgent.includes('chrome')) {
+        browserNote = 'Safari: Tap Share button → "Add to Home Screen" (PWA install prompt is not shown automatically).';
+      } else if (userAgent.includes('firefox')) {
+        browserNote = 'Firefox: Limited PWA support. Install may not be available.';
+      }
+
+      if (browserNote) {
+        const div = document.createElement('div');
+        div.className = 'check pending';
+        div.innerHTML = `<strong>Browser-Specific Instructions</strong><br>${browserNote}`;
+        results.appendChild(div);
+      }
+    }
+
+    // Listen for install prompt
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installSection.style.display = 'block';
+
+      const div = document.createElement('div');
+      div.className = 'check pass';
+      div.innerHTML = '<strong>✓ Install Prompt Available</strong><br>The browser is ready to install! Click the "Install App" button below.';
+      results.appendChild(div);
+    });
+
+    installBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) {
+        alert('Install prompt not available. Try the browser-specific instructions above.');
+        return;
+      }
+
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+
+      if (outcome === 'accepted') {
+        alert('App installed successfully!');
+      } else {
+        alert('Installation cancelled');
+      }
+
+      deferredPrompt = null;
+      installSection.style.display = 'none';
+    });
+
+    // Run checks
+    checkPWA();
+  </script>
+</body>
+</html>
