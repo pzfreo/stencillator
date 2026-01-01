@@ -104,29 +104,41 @@
         addCheck('Service Worker', false, 'Service Worker not supported in this browser');
       }
 
-      // Check Manifest
+      // Check Manifest (check the main app, not this diagnostic page)
       try {
-        const manifestLink = document.querySelector('link[rel="manifest"]');
-        if (manifestLink) {
-          const manifestUrl = new URL(manifestLink.href, window.location.href);
-          const response = await fetch(manifestUrl);
-          const manifest = await response.json();
+        // First, check if main app HTML has manifest link
+        const mainAppResponse = await fetch('../');
+        const mainAppHtml = await mainAppResponse.text();
+        const hasManifestLink = mainAppHtml.includes('rel="manifest"');
 
-          addCheck('Manifest', true, `Found manifest at: ${manifestLink.href}`);
-
-          const has192 = manifest.icons?.some(i => i.sizes.includes('192'));
-          const has512 = manifest.icons?.some(i => i.sizes.includes('512'));
-
-          addCheck('Required Icons (192x192)', has192, has192 ? 'Found 192x192 icon' : 'Missing 192x192 icon');
-          addCheck('Required Icons (512x512)', has512, has512 ? 'Found 512x512 icon' : 'Missing 512x512 icon');
-
-          const div = document.createElement('div');
-          div.className = 'check pass';
-          div.innerHTML = `<strong>Manifest Details</strong><br><pre>${JSON.stringify(manifest, null, 2)}</pre>`;
-          results.appendChild(div);
+        if (!hasManifestLink) {
+          addCheck('Manifest Link', false, 'Main app HTML does not include manifest link');
         } else {
-          addCheck('Manifest', false, 'No manifest link found in HTML');
+          addCheck('Manifest Link', true, 'Main app HTML includes manifest link');
         }
+
+        // Try to fetch the manifest file
+        const manifestUrl = new URL('../manifest.webmanifest', window.location.href);
+        const response = await fetch(manifestUrl);
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const manifest = await response.json();
+
+        addCheck('Manifest File', true, `Found manifest at: ${manifestUrl.href}`);
+
+        const has192 = manifest.icons?.some(i => i.sizes.includes('192'));
+        const has512 = manifest.icons?.some(i => i.sizes.includes('512'));
+
+        addCheck('Required Icons (192x192)', has192, has192 ? 'Found 192x192 icon' : 'Missing 192x192 icon');
+        addCheck('Required Icons (512x512)', has512, has512 ? 'Found 512x512 icon' : 'Missing 512x512 icon');
+
+        const div = document.createElement('div');
+        div.className = 'check pass';
+        div.innerHTML = `<strong>Manifest Details</strong><br><pre>${JSON.stringify(manifest, null, 2)}</pre>`;
+        results.appendChild(div);
       } catch (err) {
         addCheck('Manifest', false, `Error loading manifest: ${err.message}`);
       }
