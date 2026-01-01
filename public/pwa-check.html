@@ -107,7 +107,7 @@
       // Check Manifest (check the main app, not this diagnostic page)
       try {
         // First, check if main app HTML has manifest link
-        const mainAppResponse = await fetch('../');
+        const mainAppResponse = await fetch('./');
         const mainAppHtml = await mainAppResponse.text();
         const hasManifestLink = mainAppHtml.includes('rel="manifest"');
 
@@ -118,7 +118,7 @@
         }
 
         // Try to fetch the manifest file
-        const manifestUrl = new URL('../manifest.webmanifest', window.location.href);
+        const manifestUrl = new URL('./manifest.webmanifest', window.location.href);
         const response = await fetch(manifestUrl);
 
         if (!response.ok) {
