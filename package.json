@@ -35,5 +35,8 @@
     "workbox-window": "^7.4.1",
     "@eslint/js": "^10.0.1",
     "globals": "^17.6.0"
+  },
+  "engines": {
+    "node": ">=22.13"
   }
 }
