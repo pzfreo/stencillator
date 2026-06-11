@@ -76,6 +76,6 @@ generate_svg_py(
     };
   } catch (error) {
     console.error('SVG generation error:', error);
-    throw new Error(`Failed to generate SVG: ${error.message}`);
+    throw new Error(`Failed to generate SVG: ${error.message}`, { cause: error });
   }
 }

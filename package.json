@@ -7,8 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint . --ext .js",
-    "lint:fix": "eslint . --ext .js --fix",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "format": "prettier --write \"**/*.{js,html,css,json,md}\"",
     "format:check": "prettier --check \"**/*.{js,html,css,json,md}\"",
     "test": "vitest",
@@ -24,14 +24,19 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@vitest/ui": "^1.6.0",
-    "eslint": "^8.57.0",
-    "eslint-config-prettier": "^9.1.0",
+    "@vitest/ui": "^4.1.8",
+    "eslint": "^10.4.1",
+    "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.3.3",
-    "typescript": "^5.5.4",
-    "vite": "^5.4.2",
-    "vite-plugin-pwa": "^0.20.1",
-    "vitest": "^1.6.0",
-    "workbox-window": "^7.1.0"
+    "typescript": "~6.0.3",
+    "vite": "^8.0.16",
+    "vite-plugin-pwa": "^1.3.0",
+    "vitest": "^4.1.8",
+    "workbox-window": "^7.4.1",
+    "@eslint/js": "^10.0.1",
+    "globals": "^17.6.0"
+  },
+  "engines": {
+    "node": ">=22.13"
   }
 }
